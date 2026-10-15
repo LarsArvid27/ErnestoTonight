@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ernesto Tonight?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef0f4;--panel:#fff;--ink:#1c1c1e;--muted:#6b6f78;--line:#d6d9e0;--accent:#2f6bff;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15161a;--panel:#212329;--ink:#f2f3f5;--muted:#9a9fab;--line:#363944;--accent:#6c93ff;}}
+:root[data-theme="dark"]{--bg:#15161a;--panel:#212329;--ink:#f2f3f5;--muted:#9a9fab;--line:#363944;--accent:#6c93ff;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 40px;display:grid;gap:20px}
+h1{font-size:1.6rem;margin:0 0 4px;letter-spacing:-.01em}
+p.sub{margin:0;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+label{font-weight:600;font-size:.9rem;display:grid;gap:6px}
+input[type=text]{font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.row{grid-template-columns:1fr}}
+.check{display:flex;gap:8px;align-items:center;font-weight:400}
+.out{display:grid;gap:10px;justify-items:center}
+.out img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.hint{color:var(--muted);font-size:.85rem;text-align:center;margin:0}
+button{font:inherit;font-weight:600;padding:10px 16px;border-radius:10px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+canvas{display:none}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Ernesto Tonight?</h1>
+    <p class="sub">Type a word and get a three-text screenshot asking about it.</p>
+  </header>
+
+  <section class="panel">
+    <label>Word or phrase
+      <input type="text" id="word" value="stardew" maxlength="40" autocomplete="off">
+    </label>
+    <label class="check"><input type="checkbox" id="dark"> Dark mode screenshot</label>
+  </section>
+
+  <section class="out">
+    <img id="result" alt="Generated text message screenshot">
+    <p class="hint">Save it: press and hold the image on a phone, or right-click it on a computer.</p>
+    <button id="copy" type="button">Copy image</button>
+    <p class="hint" id="status" role="status"></p>
+  </section>
+  <canvas id="c"></canvas>
+</main>
+
+<script>
+(function(){
+  var W=1280,H=1030;
+  var canvas=document.getElementById('c');
+  var img=document.getElementById('result');
+  var wordEl=document.getElementById('word'),darkEl=document.getElementById('dark');
+  var FONT='"Helvetica Neue",Helvetica,Arial,sans-serif';
+  var EMOJI_FONT='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+  function rr(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
+  }
+
+  function draw(){
+    var dark=darkEl.checked;
+    var word=(wordEl.value.trim()||'stardew');
+    var nick='queen';
+    var emoji='👀';
+    var bg=dark?'#000':'#fff', bubble=dark?'#262629':'#e9e9eb', ink=dark?'#fff':'#000', stamp=dark?'#8e8e93':'#8a8a8e';
+
+    var ctx=canvas.getContext('2d');
+    canvas.width=W;canvas.height=H;
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.textBaseline='alphabetic';
+
+    function stamp2(l1,l2,cy){
+      ctx.fillStyle=stamp;ctx.textAlign='center';ctx.font='42px '+FONT;
+      ctx.fillText(l1,W/2,cy);
+      ctx.fillText(l2,W/2,cy+54);
+    }
+    function msg(text,withEmoji,top){
+      var h=120,padX=44,x=100;
+      ctx.font='50px '+FONT;
+      var tw=ctx.measureText(text).width;
+      var ew=0;
+      if(withEmoji&&emoji){ctx.font='46px '+EMOJI_FONT;ew=ctx.measureText(emoji).width+14;}
+      var w=Math.min(tw+ew+padX*2,W-x-60);
+      ctx.fillStyle=bubble;
+      rr(ctx,x,top,w,h,60);ctx.fill();
+      // tail
+      ctx.beginPath();
+      ctx.moveTo(x+4,top+h-34);
+      ctx.quadraticCurveTo(x+4,top+h+2,x-12,top+h+2);
+      ctx.quadraticCurveTo(x+20,top+h+4,x+44,top+h-22);
+      ctx.closePath();ctx.fill();
+      ctx.fillStyle=ink;ctx.textAlign='left';ctx.font='50px '+FONT;
+      ctx.fillText(text,x+padX,top+h/2+17);
+      if(withEmoji&&emoji){ctx.font='46px '+EMOJI_FONT;ctx.fillText(emoji,x+padX+tw+14,top+h/2+16);}
+    }
+
+    stamp2('Text Message','Monday 1:39 PM',58);
+    msg(word+' tonight?',true,170);
+    stamp2('iMessage','Yesterday 3:11 PM',428);
+    msg(word+' tonight'+(nick?' '+nick:'')+'??',false,558);
+    ctx.fillStyle=stamp;ctx.textAlign='center';ctx.font='42px '+FONT;
+    ctx.fillText('Today 12:44 PM',W/2,806);
+    msg(word+' tonight?',true,838);
+
+    try{img.src=canvas.toDataURL('image/png');}catch(e){}
+  }
+
+  [wordEl].forEach(function(el){el.addEventListener('input',draw);});
+  darkEl.addEventListener('change',draw);
+
+  document.getElementById('copy').addEventListener('click',function(){
+    var st=document.getElementById('status');
+    try{
+      canvas.toBlob(function(b){
+        try{
+          navigator.clipboard.write([new ClipboardItem({'image/png':b})]).then(
+            function(){st.textContent='Image copied.';},
+            function(){st.textContent='Copy was blocked here. Press and hold or right-click the image to save it.';});
+        }catch(e){st.textContent='Copy was blocked here. Press and hold or right-click the image to save it.';}
+      });
+    }catch(e){st.textContent='Copy was blocked here. Press and hold or right-click the image to save it.';}
+  });
+
+  draw();
+  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(draw);}
+})();
+</script>
+</body>
+</html>
